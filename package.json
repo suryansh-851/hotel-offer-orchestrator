@@ -10,7 +10,9 @@
     "build": "tsc -p tsconfig.json",
     "start": "node dist/api.js",
     "worker": "node dist/worker.js",
+    "lint": "eslint --max-warnings 0 .",
     "test": "npm run build && node --test \"test/*.test.cjs\"",
+    "test:coverage": "npm run build && node --test --experimental-test-coverage --test-coverage-exclude=dist/api.js --test-coverage-exclude=dist/worker.js --test-coverage-exclude=\"test/**\" \"test/*.test.cjs\"",
     "test:stack": "node --test test/stack.integration.cjs",
     "test:resilience": "node --test test/resilience.integration.cjs"
   },
@@ -24,9 +26,13 @@
     "ioredis": "^5.6.1"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.5",
     "@temporalio/testing": "1.26.0",
     "@types/express": "^5.0.3",
     "@types/node": "^22.15.0",
-    "typescript": "~5.9.3"
+    "eslint": "^9.39.5",
+    "globals": "^17.14.0",
+    "typescript": "~5.9.3",
+    "typescript-eslint": "^8.73.0"
   }
 }

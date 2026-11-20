@@ -4,6 +4,7 @@ import { parseMockOutage, parseSearchOutage } from './faults';
 export class InputError extends Error {}
 
 export function parseCity(value: unknown): string {
+  // eslint-disable-next-line no-control-regex -- rejecting control characters is the point of this check
   if (typeof value !== 'string' || !value.trim() || value.length > 80 || /[\x00-\x1f\x7f]/.test(value)) {
     throw new InputError('Supply one non-empty city of up to 80 characters.');
   }

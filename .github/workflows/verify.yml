@@ -13,7 +13,10 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - run: npm run lint
       - run: npm test
+      - name: Unit test coverage
+        run: npm run test:coverage
       - run: docker compose config --quiet
       - name: Check supplier health with Temporal offline
         run: |
