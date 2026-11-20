@@ -162,11 +162,11 @@ npx --yes newman@6.2.1 run postman/Hotel-Offer-Orchestrator.postman_collection.j
 
 ```sh
 npm run lint            # ESLint with type-aware promise rules, zero warnings allowed
-npm test                # compile, then 48 unit tests in about two seconds
+npm test                # compile, then 56 unit tests in about three seconds
 npm run test:coverage   # the same tests with Node's built-in coverage table
 ```
 
-The unit tests need no Docker, Temporal or Redis. They cover comparison rules, validation, the Express app over real HTTP with injected fakes, the activities (Temporal's `MockActivityEnvironment` and an in-memory Redis), retry classification, logging, and a check that the workflow bundle imports nothing impure. Coverage is 100% of lines across the modules it measures. It leaves out the two process entrypoints, `api.ts` and `worker.ts`, and `workflows.ts` never loads in a unit test, so the stack test below is what covers the workflow.
+The unit tests need no Docker, Temporal or Redis. They cover comparison rules, validation, configuration parsing, the Express app over real HTTP with injected fakes, the activities (Temporal's `MockActivityEnvironment` and an in-memory Redis), retry classification, logging, and a check that the workflow bundle imports nothing impure. Coverage is 100% of lines across the modules it measures. It leaves out the two process entrypoints, `api.ts` and `worker.ts`, and `workflows.ts` never loads in a unit test, so the stack test below is what covers the workflow.
 
 **Full-stack test.** Run this command against the active Compose stack.
 

@@ -68,6 +68,8 @@ test('schema-invalid payloads are permanent failures', async () => {
     'blank name': [row({ name: '   ' })],
     'city mismatch': [row({ city: 'mumbai' })],
     'one bad row among good ones': [row(), row({ price: -5 })],
+    'a null row': [null],
+    'a row that is not an object': [5],
     'not an array': { hotels: [row()] },
     'null body': 'null',
     'not JSON at all': '<html>bad gateway</html>'
@@ -89,6 +91,12 @@ test('network failures and timeouts are not classified, so Temporal keeps retryi
   respond(200, [row()]);
   const timedOut = await rejection(suppliers.fetchHotels('A', 'delhi', undefined, AbortSignal.abort()));
   assert.equal(timedOut instanceof suppliers.SupplierError, false, String(timedOut));
+});
+
+test('errorMessage reads an Error and stringifies anything else that was thrown', () => {
+  assert.equal(suppliers.errorMessage(new Error('boom')), 'boom');
+  assert.equal(suppliers.errorMessage('plain string'), 'plain string');
+  assert.equal(suppliers.errorMessage(undefined), 'undefined');
 });
 
 test('probeSupplier reports up with latency, or down with the reason', async () => {
