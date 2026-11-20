@@ -23,9 +23,9 @@ function ports({ start = async () => 'handle', result = async () => ({ offers, u
   };
 }
 
-async function failure(fakes) {
+async function failure(fakes, ...clockAndTimeout) {
   try {
-    await runSearch(fakes, search, 'hotels-1');
+    await runSearch(fakes, search, 'hotels-1', ...clockAndTimeout);
   } catch (error) {
     assert.ok(error instanceof SearchError, `expected SearchError, got ${error}`);
     return error;
@@ -53,6 +53,22 @@ test('every start failure is 503 SEARCH_UNAVAILABLE and never 504', async () => 
     assert.equal(mapped.cause, error);
     assert.equal(fakes.calls.result.length, 0, 'nothing is awaited when the workflow never started');
   }
+});
+
+test('a start that outlives its deadline is cut off at the start timeout, not whenever the SDK gives up', async () => {
+  // The SDK retries UNAVAILABLE with a backoff that can sleep past the call deadline, so the API bounds the wait itself.
+  let abandon;
+  const fakes = ports({ start: () => new Promise((_resolve, reject) => { abandon = reject; }) });
+  const began = Date.now();
+  const mapped = await failure(fakes, Date.now, 25);
+  assert.ok(Date.now() - began < 1000, 'returns at the start timeout without waiting for the call to settle');
+  assert.equal(mapped.status, 503);
+  assert.equal(mapped.code, 'SEARCH_UNAVAILABLE');
+  assert.match(mapped.cause.message, /did not accept the workflow within 25 ms/);
+  assert.equal(fakes.calls.result.length, 0);
+  // The abandoned call failing later is not an unhandled rejection: this test would fail the run if it were.
+  abandon(grpcDeadline());
+  await new Promise(resolve => setImmediate(resolve));
 });
 
 test('result failures map to the documented status and code', async () => {
