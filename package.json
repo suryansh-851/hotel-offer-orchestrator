@@ -8,7 +8,7 @@
     "build": "tsc -p tsconfig.json",
     "start": "node dist/api.js",
     "worker": "node dist/worker.js",
-    "test": "npm run build && node --test test/hotels.test.cjs",
+    "test": "npm run build && node --test \"test/*.test.cjs\"",
     "test:stack": "node --test test/stack.integration.cjs",
     "test:resilience": "node --test test/resilience.integration.cjs"
   },

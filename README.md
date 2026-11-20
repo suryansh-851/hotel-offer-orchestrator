@@ -139,7 +139,7 @@ To observe recovery inside a single search, send `X-Mock-Outage: B-once` on the 
 curl -i -H "X-Mock-Outage: B-once" "http://127.0.0.1:3000/api/hotels?city=delhi"
 ```
 
-Temporal allows three attempts per activity with exponential backoff starting at 250 ms. Each attempt gets four seconds and each activity gets twelve seconds overall. The API gives Temporal up to five seconds to confirm a workflow start. A started workflow has thirty seconds to complete, with a total HTTP search budget of thirty-five seconds. Activity logs include supplier failures, attempt metadata, Redis keys, and row counts. Workflow logs record degraded results and terminal failures. [Temporal TypeScript guide](https://docs.temporal.io/develop/typescript)
+Temporal allows three attempts per activity with exponential backoff starting at 250 ms. Each attempt gets four seconds and each activity gets twelve seconds overall. The API gives Temporal three seconds to accept a workflow, so a stopped or unreachable Temporal fails fast with 503 `SEARCH_UNAVAILABLE` while `/health` and the supplier endpoints keep working. Once started, a workflow has thirty seconds to complete, and the API waits two seconds beyond that, so a slow search is reported as 504 `SEARCH_TIMEOUT` by the workflow's own limit. A failure to start is never a 504. Activity logs include supplier failures, attempt metadata, Redis keys, and row counts. Workflow logs record degraded results and terminal failures. [Temporal TypeScript guide](https://docs.temporal.io/develop/typescript)
 
 ## Run the tests
 
