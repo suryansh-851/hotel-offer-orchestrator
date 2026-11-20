@@ -57,3 +57,18 @@ test('invalid cities, repeated parameters and invalid ranges are rejected', () =
   ]) assert.throws(() => parseSearch(query), InputError);
   assert.throws(() => parseSearch({ city: 'delhi' }, 'C', true), InputError);
 });
+
+test('cities with control or invisible format characters are rejected, while real names pass', () => {
+  const invisible = {
+    'zero-width space': '\u200Bdelhi', 'zero-width joiner': 'del\u200Dhi', 'zero-width non-joiner': 'del\u200Chi',
+    'byte-order mark': '\uFEFFdelhi', 'soft hyphen': 'delhi\u00AD', 'word joiner': 'del\u2060hi',
+    'right-to-left override': '\u202Edelhi', 'left-to-right mark': 'delhi\u200E',
+    newline: 'del\nhi', tab: 'del\thi', NUL: 'delhi\u0000', DEL: 'delhi\u007F', 'C1 control (NEL)': 'del\u0085hi'
+  };
+  for (const [label, city] of Object.entries(invisible)) {
+    assert.throws(() => parseSearch({ city }), InputError, label);
+  }
+  for (const city of ['Delhi', 'New Delhi', 'São Paulo', 'Montréal', 'Zürich', '東京', 'नई दिल्ली', "Hawai'i", 'St. John-Smith']) {
+    assert.equal(parseSearch({ city }).city, city.normalize('NFC').toLowerCase(), city);
+  }
+});

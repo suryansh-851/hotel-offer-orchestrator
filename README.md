@@ -76,8 +76,9 @@ One useful boundary case is [Delhi at exactly 6,000](http://127.0.0.1:3000/api/h
 | `GET /supplierA/hotels` | Supplier A rows with `hotelId`, `name`, `price`, `city`, and `commissionPct` |
 | `GET /supplierB/hotels` | Supplier B rows in the same format |
 | `GET /health` | Live HTTP probe results for each supplier |
+| `GET /livez` | `200 {"status":"ok"}` while the API process is serving. It never calls a supplier |
 
-Both mock endpoints accept an optional `city`. Search requires one nonblank city of up to 80 characters. Prices accept non-negative decimal values, including zero. Either bound can be omitted. An empty range result is HTTP 200 with `[]`.
+Both mock endpoints accept an optional `city`. Search requires one nonblank city of up to 80 characters with no control or invisible format characters, such as a zero-width space. Prices accept non-negative decimal values, including zero. Either bound can be omitted. An empty range result is HTTP 200 with `[]`.
 
 Each search that starts orchestration includes `X-Workflow-Id`. Paste its value into the Temporal UI to inspect activity schedules, retries, and the result. A partial success also includes `X-Unavailable-Suppliers`.
 
@@ -113,7 +114,7 @@ The key suffix identifies the suppliers that responded. For example, `hotels:v1:
 
 ## Health, retries, and logs
 
-`/health` calls both supplier listing endpoints in parallel with a two-second HTTP timeout. It can report supplier availability while Temporal or Redis is offline. Two successful probes return 200. A failed probe returns 503 and identifies the affected supplier. In this example, Supplier B is down.
+`/livez` only says the API process is up, and the Compose healthcheck for the API container uses it, so a supplier problem never makes the container unhealthy. `/health` calls both supplier listing endpoints in parallel with a two-second HTTP timeout. It can report supplier availability while Temporal or Redis is offline. Two successful probes return 200. A failed probe returns 503 and identifies the affected supplier. In this example, Supplier B is down.
 
 ```json
 {

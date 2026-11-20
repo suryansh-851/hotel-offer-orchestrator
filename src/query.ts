@@ -4,8 +4,9 @@ import { parseMockOutage, parseSearchOutage } from './faults';
 export class InputError extends Error {}
 
 export function parseCity(value: unknown): string {
-  // eslint-disable-next-line no-control-regex -- rejecting control characters is the point of this check
-  if (typeof value !== 'string' || !value.trim() || value.length > 80 || /[\x00-\x1f\x7f]/.test(value)) {
+  // Cc is control characters. Cf is format characters such as zero-width spaces, joiners, byte-order marks and
+  // bidi overrides: invisible, so two cities that look the same would never match.
+  if (typeof value !== 'string' || !value.trim() || value.length > 80 || /[\p{Cc}\p{Cf}]/u.test(value)) {
     throw new InputError('Supply one non-empty city of up to 80 characters.');
   }
   return normalize(value);

@@ -46,7 +46,9 @@ test('validation failures are 400 INVALID_REQUEST, including the async handler t
     ['/api/hotels?city=delhi&minPrice=-1', 'minPrice must be a non-negative decimal number.'],
     ['/api/hotels?city=delhi&maxPrice=abc', 'maxPrice must be a non-negative decimal number.'],
     ['/api/hotels?city=delhi&minPrice=6000&maxPrice=5999', 'minPrice must be less than or equal to maxPrice.'],
-    ['/supplierA/hotels?city=', 'Supply one non-empty city of up to 80 characters.']
+    ['/supplierA/hotels?city=', 'Supply one non-empty city of up to 80 characters.'],
+    ['/api/hotels?city=%E2%80%8Bdelhi', 'Supply one non-empty city of up to 80 characters.'],
+    ['/supplierB/hotels?city=del%EF%BB%BFhi', 'Supply one non-empty city of up to 80 characters.']
   ];
   for (const [path, message] of bad) {
     const response = await get(path);
@@ -200,4 +202,14 @@ test('a search runner that throws something unexpected is still a 503 SEARCH_UNA
 
   const typed = await serve(t, { search: async () => { throw new SearchError(504, 'SEARCH_TIMEOUT', 'Hotel search timed out.'); } });
   assert.equal((await typed.get('/api/hotels?city=delhi')).status, 504);
+});
+
+test('/livez is a constant 200 that never calls a supplier, even when /health is failing', async t => {
+  const { get, calls } = await serve(t, { probeSupplier: async () => { throw new Error('supplier probe must not run'); } });
+  const response = await get('/livez');
+  assert.equal(response.status, 200);
+  assert.deepEqual(response.body, { status: 'ok' });
+  assert.equal(response.headers.get('cache-control'), 'no-store');
+  assert.equal((await get('/health')).status, 500, 'the same app reports /health failing');
+  assert.equal(calls.probe.length, 0);
 });

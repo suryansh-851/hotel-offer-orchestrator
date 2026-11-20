@@ -38,6 +38,10 @@ export function createApp(deps: AppDeps) {
     });
   }
 
+  // Liveness only: the process is up and serving. It never calls a supplier, so a supplier outage
+  // cannot make an orchestrator restart a healthy API. /health reports supplier state.
+  app.get('/livez', (_req, res) => { res.json({ status: 'ok' }); });
+
   app.get('/health', async (req, res) => {
     const outage = parseOutage(req.get('X-Mock-Outage'), enableMockFaults);
     const [a, b] = await Promise.all([probe('A', outage), probe('B', outage)]);
