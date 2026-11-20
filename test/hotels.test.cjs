@@ -42,7 +42,7 @@ test('missing inventory yields an empty list', () => {
 });
 
 test('city normalization, decimal bounds, zero and single-sided bounds', () => {
-  const query = parseSearch({ city: '  New   Delhi  ', minPrice: '0', maxPrice: '100.50' }, 'A');
+  const query = parseSearch({ city: '  New   Delhi  ', minPrice: '0', maxPrice: '100.50' }, 'A', true);
   assert.deepEqual(query, { city: 'new delhi', minPrice: 0, maxPrice: 100.5, outage: 'A' });
   assert.equal(parseSearch({ city: 'Delhi', maxPrice: '0' }).maxPrice, 0);
   assert.equal(parseSearch({ city: 'Delhi', minPrice: '5900' }).maxPrice, undefined);
@@ -55,5 +55,5 @@ test('invalid cities, repeated parameters and invalid ranges are rejected', () =
     { city: 'delhi', minPrice: '-1' }, { city: 'delhi', minPrice: '0x10' },
     { city: 'delhi', minPrice: ['1', '2'] }, { city: 'delhi', minPrice: '6000', maxPrice: '5999' }
   ]) assert.throws(() => parseSearch(query), InputError);
-  assert.throws(() => parseSearch({ city: 'delhi' }, 'C'), InputError);
+  assert.throws(() => parseSearch({ city: 'delhi' }, 'C', true), InputError);
 });

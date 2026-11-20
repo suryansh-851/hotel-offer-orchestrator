@@ -125,7 +125,7 @@ The key suffix identifies the suppliers that responded. For example, `hotels:v1:
 }
 ```
 
-Send `X-Mock-Outage: A`, `B`, or `both` on a search, health check, or direct supplier request. The chosen mock returns a real HTTP 503 for that request and its retries. Other clients continue to see normal inventory. On Windows PowerShell, use `curl.exe` for the commands below.
+Fault injection is a demo feature behind `ENABLE_MOCK_FAULTS`, which Compose turns on. With it off, `X-Mock-Outage` is ignored on every endpoint, even when the value is invalid, and never reaches the workflow. With it on, send `X-Mock-Outage: A`, `B`, or `both` on a search, health check, or direct supplier request, and an unsupported value is a 400. The chosen mock returns a real HTTP 503 for that request and its retries. Other clients continue to see normal inventory. On Windows PowerShell, use `curl.exe` for the commands below.
 
 ```sh
 curl -i -H "X-Mock-Outage: B" "http://127.0.0.1:3000/health"
@@ -189,7 +189,7 @@ Compose works with its defaults. A project-root `.env` can override the host bin
 | `API_BIND` | `127.0.0.1` | Host network interface for the API |
 | `TEMPORAL_UI_PORT` | `8233` | Host port for the loopback-only Temporal UI |
 
-For native development, start Redis on port 6379 and run `temporal server start-dev` on port 7233. Run `npm ci` and `npm run build`, then start `npm start` and `npm run worker` in separate terminals. Set `PORT`, `REDIS_URL`, `TEMPORAL_ADDRESS`, `TEMPORAL_NAMESPACE`, or `SUPPLIER_BASE_URL` in the process environment to override the defaults in [config.ts](src/config.ts).
+For native development, start Redis on port 6379 and run `temporal server start-dev` on port 7233. Run `npm ci` and `npm run build`, then start `npm start` and `npm run worker` in separate terminals. Set `PORT`, `REDIS_URL`, `TEMPORAL_ADDRESS`, `TEMPORAL_NAMESPACE`, or `SUPPLIER_BASE_URL` in the process environment to override the defaults in [config.ts](src/config.ts). Set `ENABLE_MOCK_FAULTS=true` on the API process to try the outage headers; it is off by default, and Compose sets it for the demo stack.
 
 ## Assessment checklist
 

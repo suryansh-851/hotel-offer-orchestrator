@@ -29,7 +29,7 @@ async function run() {
 
   for (const supplier of suppliers) {
     app.get(`/supplier${supplier}/hotels`, (req, res) => {
-      const outage = parseOutage(req.get('X-Mock-Outage'));
+      const outage = parseOutage(req.get('X-Mock-Outage'), config.enableMockFaults);
       if (outage === supplier || outage === 'both') {
         res.status(503).json({ error: { code: 'SUPPLIER_UNAVAILABLE', message: `Supplier ${supplier} is unavailable.` } });
         return;
@@ -40,14 +40,14 @@ async function run() {
   }
 
   app.get('/health', async (req, res) => {
-    const outage = parseOutage(req.get('X-Mock-Outage'));
+    const outage = parseOutage(req.get('X-Mock-Outage'), config.enableMockFaults);
     const [a, b] = await Promise.all([probeSupplier('A', outage), probeSupplier('B', outage)]);
     const status = a.status === b.status ? (a.status === 'up' ? 'healthy' : 'unavailable') : 'degraded';
     res.status(status === 'healthy' ? 200 : 503).json({ status, suppliers: { 'Supplier A': a, 'Supplier B': b } });
   });
 
   app.get('/api/hotels', async (req, res) => {
-    const search = parseSearch(req.query, req.get('X-Mock-Outage'));
+    const search = parseSearch(req.query, req.get('X-Mock-Outage'), config.enableMockFaults);
     const workflowId = `hotels-${randomUUID()}`;
     res.set('X-Workflow-Id', workflowId);
     try {

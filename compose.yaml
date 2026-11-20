@@ -8,6 +8,8 @@ x-app: &app
     TEMPORAL_ADDRESS: temporal:7233
     REDIS_URL: redis://redis:6379
     SUPPLIER_BASE_URL: http://api:3000
+    # Demo only: lets X-Mock-Outage simulate supplier outages for Postman, the tests and CI.
+    ENABLE_MOCK_FAULTS: "true"
 
 services:
   redis:

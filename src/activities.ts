@@ -2,13 +2,9 @@ import { Context, log } from '@temporalio/activity';
 import { ApplicationFailure } from '@temporalio/common';
 import type Redis from 'ioredis';
 import { config } from './config';
-import type { MockOutage, Offer, Search, Supplier } from './domain';
+import type { Offer, Search, Supplier } from './domain';
+import { outageForAttempt } from './faults';
 import { SupplierError, errorMessage, fetchHotels } from './suppliers';
-
-function outageForAttempt(outage: Search['outage'], attempt: number): MockOutage | undefined {
-  if (outage !== 'B-once') return outage;
-  return attempt === 1 ? 'B' : undefined;
-}
 
 export function createActivities(redis: Redis) {
   return {

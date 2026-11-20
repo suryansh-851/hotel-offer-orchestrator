@@ -8,6 +8,8 @@ const port = parsePort(process.env.PORT ?? '3000', 'PORT');
 
 export const config = {
   port,
+  // Demo only. Lets X-Mock-Outage simulate supplier outages. Off unless set to "true" or "1".
+  enableMockFaults: ['true', '1'].includes((process.env.ENABLE_MOCK_FAULTS ?? '').toLowerCase()),
   workerHealthPort: process.env.WORKER_HEALTH_PORT === undefined
     ? undefined : parsePort(process.env.WORKER_HEALTH_PORT, 'WORKER_HEALTH_PORT'),
   temporalAddress: process.env.TEMPORAL_ADDRESS ?? '127.0.0.1:7233',

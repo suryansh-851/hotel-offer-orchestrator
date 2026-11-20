@@ -1,4 +1,5 @@
 import { normalize, type MockOutage, type Search } from './domain';
+import { parseMockOutage, parseSearchOutage } from './faults';
 
 export class InputError extends Error {}
 
@@ -17,18 +18,24 @@ function parsePrice(value: unknown, field: string): number | undefined {
   return Number(value);
 }
 
-export function parseOutage(value?: string): MockOutage | undefined {
-  if (value === undefined || value === 'A' || value === 'B' || value === 'both') return value;
-  throw new InputError('Unsupported X-Mock-Outage value.');
+const unsupportedOutage = () => new InputError('Unsupported X-Mock-Outage value.');
+
+/** X-Mock-Outage for a supplier endpoint or /health. Ignored entirely unless fault injection is enabled. */
+export function parseOutage(value: string | undefined, enableMockFaults: boolean): MockOutage | undefined {
+  const outage = parseMockOutage(value, enableMockFaults);
+  if (outage === 'unsupported') throw unsupportedOutage();
+  return outage;
 }
 
-export function parseSearch(query: Record<string, unknown>, outageHeader?: string): Search {
+export function parseSearch(query: Record<string, unknown>, outageHeader?: string, enableMockFaults = false): Search {
   const city = parseCity(query.city);
   const minPrice = parsePrice(query.minPrice, 'minPrice');
   const maxPrice = parsePrice(query.maxPrice, 'maxPrice');
   if (minPrice !== undefined && maxPrice !== undefined && minPrice > maxPrice) {
     throw new InputError('minPrice must be less than or equal to maxPrice.');
   }
-  const outage = outageHeader === 'B-once' ? outageHeader : parseOutage(outageHeader);
-  return { city, minPrice, maxPrice, outage };
+  const outage = parseSearchOutage(outageHeader, enableMockFaults);
+  if (outage === 'unsupported') throw unsupportedOutage();
+  // With faults off the key is absent, so the header never reaches the workflow input.
+  return { city, minPrice, maxPrice, ...(outage && { outage }) };
 }
