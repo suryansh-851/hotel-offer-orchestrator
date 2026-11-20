@@ -1,0 +1,10 @@
+node_modules/
+dist/
+coverage/
+.env
+*.log
+.DS_Store
+# Original assignment attachments, supplied separately from the submission
+/Assessment - Backend + Redis.pdf
+/image.png
+/hotel-offer-orchestrator.zip

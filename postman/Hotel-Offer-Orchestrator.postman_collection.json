@@ -1,0 +1,1229 @@
+{
+  "info": {
+    "_postman_id": "70a74c8d-7262-4d21-aed0-2b2402761da4",
+    "name": "Hotel Offer Orchestrator",
+    "description": "Run all folders against the Compose API. Delhi has two overlaps and two exclusive hotels. Each simulated outage lasts for one request. Set baseUrl to test another host.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://127.0.0.1:3000",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Supplier inventories",
+      "item": [
+        {
+          "name": "Supplier A · Delhi inventory",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/supplierA/hotels?city=delhi",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "supplierA",
+                "hotels"
+              ],
+              "query": [
+                {
+                  "key": "city",
+                  "value": "delhi"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200 and JSON\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.response.to.be.json;",
+                  "});",
+                  "pm.test(\"Three raw Delhi rows including both overlapping names\", function () {",
+                  "  const rows = pm.response.json();",
+                  "  pm.expect(rows).to.have.lengthOf(3);",
+                  "  pm.expect(rows.map(row => row.name)).to.include.members(['Holtin', 'Radison']);",
+                  "  rows.forEach(row => {",
+                  "    pm.expect(row).to.have.all.keys('hotelId', 'name', 'price', 'city', 'commissionPct');",
+                  "    pm.expect(row.city).to.eql('delhi');",
+                  "  });",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Supplier B · Delhi inventory",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/supplierB/hotels?city=delhi",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "supplierB",
+                "hotels"
+              ],
+              "query": [
+                {
+                  "key": "city",
+                  "value": "delhi"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200 and JSON\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.response.to.be.json;",
+                  "});",
+                  "pm.test(\"Three raw Delhi rows including both overlapping names\", function () {",
+                  "  const rows = pm.response.json();",
+                  "  pm.expect(rows).to.have.lengthOf(3);",
+                  "  pm.expect(rows.map(row => row.name)).to.include.members(['Holtin', 'Radison']);",
+                  "  rows.forEach(row => {",
+                  "    pm.expect(row).to.have.all.keys('hotelId', 'name', 'price', 'city', 'commissionPct');",
+                  "    pm.expect(row.city).to.eql('delhi');",
+                  "  });",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Supplier A full inventory",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/supplierA/hotels",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "supplierA",
+                "hotels"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200 and JSON\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.response.to.be.json;",
+                  "});",
+                  "pm.test(\"Includes both fixture cities and every raw field\", function () {",
+                  "  const rows = pm.response.json();",
+                  "  pm.expect(rows).to.have.lengthOf(4);",
+                  "  pm.expect(rows.map(row => row.city)).to.include.members(['delhi', 'mumbai']);",
+                  "  rows.forEach(row => pm.expect(row).to.have.all.keys('hotelId', 'name', 'price', 'city', 'commissionPct'));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Supplier B full inventory",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/supplierB/hotels",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "supplierB",
+                "hotels"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200 and JSON\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.response.to.be.json;",
+                  "});",
+                  "pm.test(\"Includes both fixture cities and every raw field\", function () {",
+                  "  const rows = pm.response.json();",
+                  "  pm.expect(rows).to.have.lengthOf(4);",
+                  "  pm.expect(rows.map(row => row.city)).to.include.members(['delhi', 'mumbai']);",
+                  "  rows.forEach(row => pm.expect(row).to.have.all.keys('hotelId', 'name', 'price', 'city', 'commissionPct'));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Compare offers",
+      "item": [
+        {
+          "name": "Delhi · overlaps and exclusive hotels",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/hotels?city=delhi",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "hotels"
+              ],
+              "query": [
+                {
+                  "key": "city",
+                  "value": "delhi"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200 and JSON\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.response.to.be.json;",
+                  "});",
+                  "pm.test(\"Workflow ID returned\", function () {",
+                  "  pm.expect(pm.response.headers.get('X-Workflow-Id')).to.match(/^hotels-[0-9a-f-]{36}$/);",
+                  "});",
+                  "pm.test(\"Exact winning rows in price order\", function () {",
+                  "  pm.expect(pm.response.json()).to.deep.equal([{\"name\":\"Holtin\",\"price\":5340,\"supplier\":\"Supplier B\",\"commissionPct\":20},{\"name\":\"Radison\",\"price\":5900,\"supplier\":\"Supplier A\",\"commissionPct\":13},{\"name\":\"Neem Courtyard\",\"price\":7200,\"supplier\":\"Supplier A\",\"commissionPct\":9},{\"name\":\"Lotus Residency\",\"price\":8100,\"supplier\":\"Supplier B\",\"commissionPct\":11}]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Inclusive range · assignment example",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/hotels?city=delhi&minPrice=5340&maxPrice=5900",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "hotels"
+              ],
+              "query": [
+                {
+                  "key": "city",
+                  "value": "delhi"
+                },
+                {
+                  "key": "minPrice",
+                  "value": "5340"
+                },
+                {
+                  "key": "maxPrice",
+                  "value": "5900"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200 and JSON\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.response.to.be.json;",
+                  "});",
+                  "pm.test(\"Workflow ID returned\", function () {",
+                  "  pm.expect(pm.response.headers.get('X-Workflow-Id')).to.match(/^hotels-[0-9a-f-]{36}$/);",
+                  "});",
+                  "pm.test(\"Exact winning rows in price order\", function () {",
+                  "  pm.expect(pm.response.json()).to.deep.equal([{\"name\":\"Holtin\",\"price\":5340,\"supplier\":\"Supplier B\",\"commissionPct\":20},{\"name\":\"Radison\",\"price\":5900,\"supplier\":\"Supplier A\",\"commissionPct\":13}]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Exact price",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/hotels?city=delhi&minPrice=5900&maxPrice=5900",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "hotels"
+              ],
+              "query": [
+                {
+                  "key": "city",
+                  "value": "delhi"
+                },
+                {
+                  "key": "minPrice",
+                  "value": "5900"
+                },
+                {
+                  "key": "maxPrice",
+                  "value": "5900"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200 and JSON\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.response.to.be.json;",
+                  "});",
+                  "pm.test(\"Workflow ID returned\", function () {",
+                  "  pm.expect(pm.response.headers.get('X-Workflow-Id')).to.match(/^hotels-[0-9a-f-]{36}$/);",
+                  "});",
+                  "pm.test(\"Exact winning rows in price order\", function () {",
+                  "  pm.expect(pm.response.json()).to.deep.equal([{\"name\":\"Radison\",\"price\":5900,\"supplier\":\"Supplier A\",\"commissionPct\":13}]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Lower bound only",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/hotels?city=delhi&minPrice=7200",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "hotels"
+              ],
+              "query": [
+                {
+                  "key": "city",
+                  "value": "delhi"
+                },
+                {
+                  "key": "minPrice",
+                  "value": "7200"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200 and JSON\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.response.to.be.json;",
+                  "});",
+                  "pm.test(\"Workflow ID returned\", function () {",
+                  "  pm.expect(pm.response.headers.get('X-Workflow-Id')).to.match(/^hotels-[0-9a-f-]{36}$/);",
+                  "});",
+                  "pm.test(\"Exact winning rows in price order\", function () {",
+                  "  pm.expect(pm.response.json()).to.deep.equal([{\"name\":\"Neem Courtyard\",\"price\":7200,\"supplier\":\"Supplier A\",\"commissionPct\":9},{\"name\":\"Lotus Residency\",\"price\":8100,\"supplier\":\"Supplier B\",\"commissionPct\":11}]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Upper bound only",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/hotels?city=delhi&maxPrice=5340",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "hotels"
+              ],
+              "query": [
+                {
+                  "key": "city",
+                  "value": "delhi"
+                },
+                {
+                  "key": "maxPrice",
+                  "value": "5340"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200 and JSON\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.response.to.be.json;",
+                  "});",
+                  "pm.test(\"Workflow ID returned\", function () {",
+                  "  pm.expect(pm.response.headers.get('X-Workflow-Id')).to.match(/^hotels-[0-9a-f-]{36}$/);",
+                  "});",
+                  "pm.test(\"Exact winning rows in price order\", function () {",
+                  "  pm.expect(pm.response.json()).to.deep.equal([{\"name\":\"Holtin\",\"price\":5340,\"supplier\":\"Supplier B\",\"commissionPct\":20}]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "No price in range",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/hotels?city=delhi&maxPrice=0",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "hotels"
+              ],
+              "query": [
+                {
+                  "key": "city",
+                  "value": "delhi"
+                },
+                {
+                  "key": "maxPrice",
+                  "value": "0"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200 and JSON\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.response.to.be.json;",
+                  "});",
+                  "pm.test(\"Workflow ID returned\", function () {",
+                  "  pm.expect(pm.response.headers.get('X-Workflow-Id')).to.match(/^hotels-[0-9a-f-]{36}$/);",
+                  "});",
+                  "pm.test(\"Exact winning rows in price order\", function () {",
+                  "  pm.expect(pm.response.json()).to.deep.equal([]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Unknown city",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/hotels?city=atlantis",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "hotels"
+              ],
+              "query": [
+                {
+                  "key": "city",
+                  "value": "atlantis"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200 and JSON\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.response.to.be.json;",
+                  "});",
+                  "pm.test(\"Workflow ID returned\", function () {",
+                  "  pm.expect(pm.response.headers.get('X-Workflow-Id')).to.match(/^hotels-[0-9a-f-]{36}$/);",
+                  "});",
+                  "pm.test(\"Exact winning rows in price order\", function () {",
+                  "  pm.expect(pm.response.json()).to.deep.equal([]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Mumbai · equal price goes to Supplier A",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/hotels?city=MUMBAI",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "hotels"
+              ],
+              "query": [
+                {
+                  "key": "city",
+                  "value": "MUMBAI"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200 and JSON\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.response.to.be.json;",
+                  "});",
+                  "pm.test(\"Workflow ID returned\", function () {",
+                  "  pm.expect(pm.response.headers.get('X-Workflow-Id')).to.match(/^hotels-[0-9a-f-]{36}$/);",
+                  "});",
+                  "pm.test(\"Exact winning rows in price order\", function () {",
+                  "  pm.expect(pm.response.json()).to.deep.equal([{\"name\":\"Harbour House\",\"price\":4800,\"supplier\":\"Supplier A\",\"commissionPct\":12}]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Filter after comparison: losing price of 6000",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/hotels?city=delhi&minPrice=6000&maxPrice=6000",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "hotels"
+              ],
+              "query": [
+                {
+                  "key": "city",
+                  "value": "delhi"
+                },
+                {
+                  "key": "minPrice",
+                  "value": "6000"
+                },
+                {
+                  "key": "maxPrice",
+                  "value": "6000"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200 and JSON\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.response.to.be.json;",
+                  "});",
+                  "pm.test(\"Holtin's losing supplier offer cannot re-enter the result\", function () {",
+                  "  pm.expect(pm.response.json()).to.deep.equal([]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Input validation",
+      "item": [
+        {
+          "name": "Missing city",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/hotels",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "hotels"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400 and JSON\", function () {",
+                  "  pm.response.to.have.status(400);",
+                  "  pm.response.to.be.json;",
+                  "});",
+                  "pm.test(\"Error code\", function () {",
+                  "  pm.expect(pm.response.json().error.code).to.eql('INVALID_REQUEST');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Reversed price bounds",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/hotels?city=delhi&minPrice=6000&maxPrice=5000",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "hotels"
+              ],
+              "query": [
+                {
+                  "key": "city",
+                  "value": "delhi"
+                },
+                {
+                  "key": "minPrice",
+                  "value": "6000"
+                },
+                {
+                  "key": "maxPrice",
+                  "value": "5000"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400 and JSON\", function () {",
+                  "  pm.response.to.have.status(400);",
+                  "  pm.response.to.be.json;",
+                  "});",
+                  "pm.test(\"Error code\", function () {",
+                  "  pm.expect(pm.response.json().error.code).to.eql('INVALID_REQUEST');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Invalid price",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/hotels?city=delhi&minPrice=free",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "hotels"
+              ],
+              "query": [
+                {
+                  "key": "city",
+                  "value": "delhi"
+                },
+                {
+                  "key": "minPrice",
+                  "value": "free"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400 and JSON\", function () {",
+                  "  pm.response.to.have.status(400);",
+                  "  pm.response.to.be.json;",
+                  "});",
+                  "pm.test(\"Error code\", function () {",
+                  "  pm.expect(pm.response.json().error.code).to.eql('INVALID_REQUEST');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Health and outages",
+      "item": [
+        {
+          "name": "Both suppliers healthy",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "health"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200 and JSON\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.response.to.be.json;",
+                  "});",
+                  "pm.test(\"Reports both HTTP probes\", function () {",
+                  "  const health = pm.response.json();",
+                  "  pm.expect(health.status).to.eql('healthy');",
+                  "  pm.expect(health.suppliers['Supplier A'].status).to.eql('up');",
+                  "  pm.expect(health.suppliers['Supplier B'].status).to.eql('up');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Supplier B probe fails",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Mock-Outage",
+                "value": "B"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "health"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 503 and JSON\", function () {",
+                  "  pm.response.to.have.status(503);",
+                  "  pm.response.to.be.json;",
+                  "});",
+                  "pm.test(\"Reports both HTTP probes\", function () {",
+                  "  const health = pm.response.json();",
+                  "  pm.expect(health.status).to.eql('degraded');",
+                  "  pm.expect(health.suppliers['Supplier A'].status).to.eql('up');",
+                  "  pm.expect(health.suppliers['Supplier B'].status).to.eql('down');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Supplier B returns an actual 503",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Mock-Outage",
+                "value": "B"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/supplierB/hotels?city=delhi",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "supplierB",
+                "hotels"
+              ],
+              "query": [
+                {
+                  "key": "city",
+                  "value": "delhi"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 503 and JSON\", function () {",
+                  "  pm.response.to.have.status(503);",
+                  "  pm.response.to.be.json;",
+                  "});",
+                  "pm.test(\"Error code\", function () {",
+                  "  pm.expect(pm.response.json().error.code).to.eql('SUPPLIER_UNAVAILABLE');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Search with Supplier B down",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Mock-Outage",
+                "value": "B"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/hotels?city=delhi",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "hotels"
+              ],
+              "query": [
+                {
+                  "key": "city",
+                  "value": "delhi"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200 and JSON\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.response.to.be.json;",
+                  "});",
+                  "pm.test(\"Workflow ID returned\", function () {",
+                  "  pm.expect(pm.response.headers.get('X-Workflow-Id')).to.match(/^hotels-[0-9a-f-]{36}$/);",
+                  "});",
+                  "pm.test(\"Exact winning rows in price order\", function () {",
+                  "  pm.expect(pm.response.json()).to.deep.equal([{\"name\":\"Radison\",\"price\":5900,\"supplier\":\"Supplier A\",\"commissionPct\":13},{\"name\":\"Holtin\",\"price\":6000,\"supplier\":\"Supplier A\",\"commissionPct\":10},{\"name\":\"Neem Courtyard\",\"price\":7200,\"supplier\":\"Supplier A\",\"commissionPct\":9}]);",
+                  "});",
+                  "pm.test(\"Identifies the missing supplier\", function () {",
+                  "  pm.expect(pm.response.headers.get('X-Unavailable-Suppliers')).to.eql('Supplier B');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Both suppliers down",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Mock-Outage",
+                "value": "both"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/hotels?city=delhi",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "hotels"
+              ],
+              "query": [
+                {
+                  "key": "city",
+                  "value": "delhi"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 503 and JSON\", function () {",
+                  "  pm.response.to.have.status(503);",
+                  "  pm.response.to.be.json;",
+                  "});",
+                  "pm.test(\"Workflow ID returned\", function () {",
+                  "  pm.expect(pm.response.headers.get('X-Workflow-Id')).to.match(/^hotels-[0-9a-f-]{36}$/);",
+                  "});",
+                  "pm.test(\"Error code\", function () {",
+                  "  pm.expect(pm.response.json().error.code).to.eql('SUPPLIERS_UNAVAILABLE');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Search with Supplier A down",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Mock-Outage",
+                "value": "A"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/hotels?city=delhi",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "hotels"
+              ],
+              "query": [
+                {
+                  "key": "city",
+                  "value": "delhi"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200 and JSON\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.response.to.be.json;",
+                  "});",
+                  "pm.test(\"Only the available supplier's offers are ranked\", function () {",
+                  "  const rows = pm.response.json();",
+                  "  pm.expect(rows.map(row => [row.name, row.price, row.commissionPct])).to.deep.equal([['Holtin', 5340, 20], ['Radison', 6400, 15], ['Lotus Residency', 8100, 11]]);",
+                  "  rows.forEach(row => pm.expect(row.supplier).to.eql('Supplier B'));",
+                  "  pm.expect(pm.response.headers.get('X-Unavailable-Suppliers')).to.eql('Supplier A');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Health when both suppliers fail",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Mock-Outage",
+                "value": "both"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "health"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 503 and JSON\", function () {",
+                  "  pm.response.to.have.status(503);",
+                  "  pm.response.to.be.json;",
+                  "});",
+                  "pm.test(\"Each failed probe is identified\", function () {",
+                  "  const health = pm.response.json();",
+                  "  pm.expect(health.status).to.eql('unavailable');",
+                  "  pm.expect(health.suppliers['Supplier A'].status).to.eql('down');",
+                  "  pm.expect(health.suppliers['Supplier B'].status).to.eql('down');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Unknown city with one healthy supplier",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Mock-Outage",
+                "value": "B"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/hotels?city=atlantis",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "hotels"
+              ],
+              "query": [
+                {
+                  "key": "city",
+                  "value": "atlantis"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200 and JSON\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.response.to.be.json;",
+                  "});",
+                  "pm.test(\"A successful empty inventory is a partial success\", function () {",
+                  "  pm.expect(pm.response.json()).to.deep.equal([]);",
+                  "  pm.expect(pm.response.headers.get('X-Unavailable-Suppliers')).to.eql('Supplier B');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Original search recovers after Supplier B returns 503 once",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Mock-Outage",
+                "value": "B-once"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/hotels?city=delhi",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "hotels"
+              ],
+              "query": [
+                {
+                  "key": "city",
+                  "value": "delhi"
+                }
+              ]
+            },
+            "description": "One HTTP request starts one workflow. Supplier B returns 503 on its first activity attempt and succeeds on its second. Inspect the returned workflow ID in Temporal for the attempt history."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200 and JSON\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.response.to.be.json;",
+                  "});",
+                  "pm.test(\"Workflow ID returned\", function () {",
+                  "  pm.expect(pm.response.headers.get('X-Workflow-Id')).to.match(/^hotels-[0-9a-f-]{36}$/);",
+                  "});",
+                  "pm.test(\"Exact winning rows in price order\", function () {",
+                  "  pm.expect(pm.response.json()).to.deep.equal([{\"name\":\"Holtin\",\"price\":5340,\"supplier\":\"Supplier B\",\"commissionPct\":20},{\"name\":\"Radison\",\"price\":5900,\"supplier\":\"Supplier A\",\"commissionPct\":13},{\"name\":\"Neem Courtyard\",\"price\":7200,\"supplier\":\"Supplier A\",\"commissionPct\":9},{\"name\":\"Lotus Residency\",\"price\":8100,\"supplier\":\"Supplier B\",\"commissionPct\":11}]);",
+                  "});",
+                  "pm.test(\"Complete inventory has no outage header\", function () {",
+                  "  pm.expect(pm.response.headers.has('X-Unavailable-Suppliers')).to.be.false;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Next search recovers",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/hotels?city=delhi",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "hotels"
+              ],
+              "query": [
+                {
+                  "key": "city",
+                  "value": "delhi"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200 and JSON\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.response.to.be.json;",
+                  "});",
+                  "pm.test(\"Workflow ID returned\", function () {",
+                  "  pm.expect(pm.response.headers.get('X-Workflow-Id')).to.match(/^hotels-[0-9a-f-]{36}$/);",
+                  "});",
+                  "pm.test(\"Exact winning rows in price order\", function () {",
+                  "  pm.expect(pm.response.json()).to.deep.equal([{\"name\":\"Holtin\",\"price\":5340,\"supplier\":\"Supplier B\",\"commissionPct\":20},{\"name\":\"Radison\",\"price\":5900,\"supplier\":\"Supplier A\",\"commissionPct\":13},{\"name\":\"Neem Courtyard\",\"price\":7200,\"supplier\":\"Supplier A\",\"commissionPct\":9},{\"name\":\"Lotus Residency\",\"price\":8100,\"supplier\":\"Supplier B\",\"commissionPct\":11}]);",
+                  "});",
+                  "pm.test(\"Complete inventory has no outage header\", function () {",
+                  "  pm.expect(pm.response.headers.has('X-Unavailable-Suppliers')).to.be.false;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
+    }
+  ]
+}

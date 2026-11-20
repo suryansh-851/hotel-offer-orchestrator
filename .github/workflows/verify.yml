@@ -1,0 +1,42 @@
+name: Verify hotel offers
+on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: docker compose config --quiet
+      - name: Check supplier health with Temporal offline
+        run: |
+          docker compose up --build -d --wait api
+          curl --fail --silent http://127.0.0.1:3000/health
+      - run: docker compose up --build -d --wait --wait-timeout 180
+      - name: Inspect Temporal history and Redis snapshots
+        run: docker compose run --rm --no-deps -v ./test:/app/test:ro worker npm run test:stack
+      - name: Run the Postman collection
+        id: postman
+        run: >
+          npx --yes newman@6.2.1 run postman/Hotel-Offer-Orchestrator.postman_collection.json
+          --reporters cli,junit --reporter-junit-export "$RUNNER_TEMP/postman-results.xml"
+      - name: Attach the Postman result to this run
+        if: ${{ !cancelled() && steps.postman.outcome != 'skipped' }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: postman-results
+          path: ${{ runner.temp }}/postman-results.xml
+          if-no-files-found: warn
+      - name: Verify dependency outages and recovery
+        run: npm run test:resilience
+      - if: failure()
+        run: docker compose logs --no-color --tail=150
+      - if: always()
+        run: docker compose down

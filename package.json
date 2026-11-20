@@ -1,0 +1,29 @@
+{
+  "name": "hotel-offer-orchestrator",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Compare hotel supplier offers with Temporal and Redis.",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/api.js",
+    "worker": "node dist/worker.js",
+    "test": "npm run build && node --test test/hotels.test.cjs",
+    "test:stack": "node --test test/stack.integration.cjs",
+    "test:resilience": "node --test test/resilience.integration.cjs"
+  },
+  "dependencies": {
+    "@temporalio/activity": "1.26.0",
+    "@temporalio/client": "1.26.0",
+    "@temporalio/common": "1.26.0",
+    "@temporalio/worker": "1.26.0",
+    "@temporalio/workflow": "1.26.0",
+    "express": "^5.1.0",
+    "ioredis": "^5.6.1"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.3",
+    "@types/node": "^22.15.0",
+    "typescript": "~5.9.3"
+  }
+}

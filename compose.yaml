@@ -1,0 +1,72 @@
+name: hotel-offers
+
+x-app: &app
+  build: .
+  init: true
+  restart: unless-stopped
+  environment: &app-env
+    TEMPORAL_ADDRESS: temporal:7233
+    REDIS_URL: redis://redis:6379
+    SUPPLIER_BASE_URL: http://api:3000
+
+services:
+  redis:
+    image: redis:8.0-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    restart: unless-stopped
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  temporal:
+    image: temporalio/temporal:1.5.1
+    command: ["server", "start-dev", "--ip", "0.0.0.0", "--db-filename", "/home/temporal/hotels.db"]
+    restart: unless-stopped
+    volumes:
+      - temporal-data:/home/temporal
+    ports:
+      - "127.0.0.1:${TEMPORAL_UI_PORT:-8233}:8233"
+    healthcheck:
+      test: ["CMD", "temporal", "operator", "cluster", "health", "--address", "127.0.0.1:7233"]
+      interval: 5s
+      timeout: 4s
+      retries: 20
+      start_period: 10s
+
+  api:
+    <<: *app
+    ports:
+      - "${API_BIND:-127.0.0.1}:${API_PORT:-3000}:3000"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 5s
+
+  worker:
+    <<: *app
+    environment:
+      <<: *app-env
+      WORKER_HEALTH_PORT: "3001"
+    command: ["node", "dist/worker.js"]
+    stop_grace_period: 30s
+    depends_on:
+      temporal:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3001/ready').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 10s
+
+volumes:
+  redis-data:
+  temporal-data:
