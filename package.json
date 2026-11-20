@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "private": true,
   "description": "Compare hotel supplier offers with Temporal and Redis.",
-  "engines": { "node": ">=22" },
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "start": "node dist/api.js",
@@ -22,6 +24,7 @@
     "ioredis": "^5.6.1"
   },
   "devDependencies": {
+    "@temporalio/testing": "1.26.0",
     "@types/express": "^5.0.3",
     "@types/node": "^22.15.0",
     "typescript": "~5.9.3"
