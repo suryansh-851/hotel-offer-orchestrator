@@ -11,7 +11,8 @@ export default defineConfig(
     languageOptions: { parserOptions: { projectService: true, tsconfigRootDir: import.meta.dirname } },
     rules: {
       // Express identifies an error handler by its four parameters, so `_next` must stay.
-      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+      // A rest sibling is how a field is left out of a copy.
+      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', ignoreRestSiblings: true }],
       // A forgotten await silently drops an error, which matters most around Temporal and Redis calls.
       '@typescript-eslint/no-floating-promises': 'error',
       // Express 5 forwards a rejected async route handler to the error handler, so async callbacks are fine there.

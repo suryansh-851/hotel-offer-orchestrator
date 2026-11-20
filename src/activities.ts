@@ -14,10 +14,10 @@ export function createActivities(redis: Redis) {
       const outage = outageForAttempt(search.outage, context.info.attempt);
       try {
         const hotels = await fetchHotels(supplier, city, outage, context.cancellationSignal);
-        log.info('Supplier inventory received', { supplier, city, count: hotels.length });
+        log.info('supplier.received', { supplier, city, count: hotels.length });
         return { supplier, hotels };
       } catch (error) {
-        log.warn('Supplier request failed', { supplier, city, reason: errorMessage(error) });
+        log.warn('supplier.failed', { supplier, city, reason: errorMessage(error) });
         // Temporal retries any other error. A request the supplier will keep rejecting is not worth three attempts.
         if (error instanceof SupplierError && !error.retryable) {
           throw ApplicationFailure.nonRetryable(error.message, 'SupplierBadResponse');
@@ -43,10 +43,10 @@ export function createActivities(redis: Redis) {
         }
         const members = replies.at(-1)?.[1];
         if (!Array.isArray(members)) throw new Error('Unexpected Redis range response');
-        log.info('Redis price range read', { key, stored: offers.length, matched: members.length });
+        log.info('redis.range_read', { key, stored: offers.length, matched: members.length });
         return members.map(member => JSON.parse(member) as Offer);
       } catch (error) {
-        log.error('Redis snapshot failed', { key, reason: errorMessage(error) });
+        log.error('redis.failed', { key, reason: errorMessage(error) });
         throw error;
       }
     }

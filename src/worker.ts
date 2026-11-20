@@ -1,12 +1,16 @@
 import { once } from 'node:events';
 import { createServer } from 'node:http';
-import { NativeConnection, Worker } from '@temporalio/worker';
+import { NativeConnection, Runtime, Worker } from '@temporalio/worker';
 import Redis from 'ioredis';
 import { createActivities } from './activities';
 import { config } from './config';
+import { createJsonLogger } from './logging';
 import { errorMessage } from './suppliers';
 
 async function run() {
+  // Install before any connection: creating one first makes a default Runtime, and a later install throws.
+  // Forwarding sends the Rust core's own logs through the same JSON logger.
+  Runtime.install({ logger: createJsonLogger(), telemetryOptions: { logging: { forward: {} } } });
   const redis = new Redis(config.redisUrl, {
     lazyConnect: true, enableOfflineQueue: false, connectTimeout: 2000,
     commandTimeout: 2000, maxRetriesPerRequest: 1

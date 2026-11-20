@@ -52,7 +52,7 @@ test('fetchSupplier returns the supplier and its rows, and logs the count', asyn
   assert.deepEqual(result, { supplier: 'A', hotels: [row(), row({ hotelId: 'a2', name: 'Radison' })] });
   assert.equal(requests[0].url, '/supplierA/hotels?city=delhi');
   assert.equal(requests[0].outage, undefined, 'no outage header unless the search asked for one');
-  assert.ok(logs.some(l => l.message === 'Supplier inventory received' && l.supplier === 'A' && l.count === 2));
+  assert.ok(logs.some(l => l.message === 'supplier.received' && l.supplier === 'A' && l.count === 2));
 });
 
 test('B-once makes only the first attempt carry an outage', async () => {
@@ -74,7 +74,7 @@ test('a retryable failure is rethrown as is, so Temporal retries it', async () =
   const error = await rejection(env.run(createActivities({}).fetchSupplier, 'B', { city: 'delhi' }));
   assert.equal(error.message, 'Supplier B returned HTTP 503');
   assert.equal(error instanceof ApplicationFailure && error.nonRetryable, false);
-  assert.ok(logs.some(l => l.message === 'Supplier request failed' && l.reason === 'Supplier B returned HTTP 503'));
+  assert.ok(logs.some(l => l.message === 'supplier.failed' && l.reason === 'Supplier B returned HTTP 503'));
 });
 
 test('a permanent failure becomes a non-retryable ApplicationFailure, so Temporal does not retry it', async () => {
@@ -195,6 +195,6 @@ test('storeAndFilter fails, and logs, when Redis misbehaves', async () => {
     const { env, logs } = activityEnv();
     const error = await rejection(env.run(createActivities(redis).storeAndFilter, { city: 'delhi' }, ['A', 'B'], winners));
     assert.match(error.message, pattern, label);
-    assert.ok(logs.some(l => l.message === 'Redis snapshot failed' && l.level === 'ERROR'), label);
+    assert.ok(logs.some(l => l.message === 'redis.failed' && l.level === 'ERROR'), label);
   }
 });
