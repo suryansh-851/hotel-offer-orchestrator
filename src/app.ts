@@ -18,6 +18,17 @@ export interface AppDeps {
   log?(entry: Record<string, unknown>): void;
 }
 
+/** The SDK wraps the interesting error ("Failed to start Workflow" around "4 DEADLINE_EXCEEDED"), so log the whole chain. */
+function describeFailure(error: unknown): string {
+  const messages = [errorMessage(error)];
+  let cause = error instanceof Error ? error.cause : undefined;
+  while (cause !== undefined && messages.length < 5) {
+    messages.push(errorMessage(cause));
+    cause = cause instanceof Error ? cause.cause : undefined;
+  }
+  return messages.join(': ');
+}
+
 export function createApp(deps: AppDeps) {
   const { enableMockFaults, inventory, probeSupplier: probe, search: runSearch } = deps;
   const log = deps.log ?? (entry => console.error(JSON.stringify(entry)));
@@ -61,7 +72,7 @@ export function createApp(deps: AppDeps) {
       res.json(result.offers);
     } catch (error) {
       const failure = error instanceof SearchError ? error : searchUnavailable(error);
-      log({ event: 'search.failed', workflowId, reason: errorMessage(failure.cause ?? failure) });
+      log({ event: 'search.failed', workflowId, reason: describeFailure(failure.cause ?? failure) });
       res.status(failure.status).json({ error: { code: failure.code, message: failure.message } });
     }
   });

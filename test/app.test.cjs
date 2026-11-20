@@ -78,6 +78,14 @@ test('an unexpected failure is a 500 that does not leak the cause', async t => {
   assert.deepEqual(calls.log, [{ event: 'api.error', reason: 'secret internal detail' }]);
 });
 
+test('without a log function, failures are written to stderr as one JSON line', async t => {
+  const lines = [];
+  t.mock.method(console, 'error', line => lines.push(line));
+  const { get } = await serve(t, { log: undefined, probeSupplier: async () => { throw new Error('probe exploded'); } });
+  assert.equal((await get('/health')).status, 500);
+  assert.deepEqual(lines.map(line => JSON.parse(line)), [{ event: 'api.error', reason: 'probe exploded' }]);
+});
+
 test('supplier endpoints serve their rows, and filter by a normalized city', async t => {
   const { get } = await serve(t);
   const all = await get('/supplierA/hotels');
@@ -202,6 +210,26 @@ test('a search runner that throws something unexpected is still a 503 SEARCH_UNA
 
   const typed = await serve(t, { search: async () => { throw new SearchError(504, 'SEARCH_TIMEOUT', 'Hotel search timed out.'); } });
   assert.equal((await typed.get('/api/hotels?city=delhi')).status, 504);
+});
+
+test('the failure log names the underlying cause, not just the SDK wrapper around it', async t => {
+  const wrapped = new Error('Failed to start Workflow', { cause: grpcDeadline() });
+  const ports = { start: async () => { throw wrapped; }, result: async () => ({ offers, unavailable: [] }) };
+  const { get, calls } = await serve(t, { search: (search, id) => runSearch(ports, search, id) });
+  assert.equal((await get('/api/hotels?city=delhi')).status, 503);
+  assert.equal(calls.log[0].reason, 'Failed to start Workflow: 4 DEADLINE_EXCEEDED');
+
+  const chain = ['a', 'b', 'c', 'd', 'e', 'f'].reduceRight((cause, message) => new Error(message, cause && { cause }), undefined);
+  const deep = await serve(t, { search: async () => { throw chain; } });
+  await deep.get('/api/hotels?city=delhi');
+  assert.equal(deep.calls.log[0].reason, 'a: b: c: d: e', 'a long chain is capped');
+
+  const odd = await serve(t, { search: async () => { throw new Error('outer', { cause: 'just a string' }); } });
+  await odd.get('/api/hotels?city=delhi');
+  assert.equal(odd.calls.log[0].reason, 'outer: just a string', 'a cause that is not an Error is still logged');
+  const bare = await serve(t, { search: async () => { throw 'thrown string'; } });
+  await bare.get('/api/hotels?city=delhi');
+  assert.equal(bare.calls.log[0].reason, 'thrown string');
 });
 
 test('/livez is a constant 200 that never calls a supplier, even when /health is failing', async t => {
