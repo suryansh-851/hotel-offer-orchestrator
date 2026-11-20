@@ -1,6 +1,23 @@
 import { config } from './config';
 import { normalize, type MockOutage, type Supplier, type SupplierHotel } from './domain';
 
+/** A failed supplier call. `retryable` says whether repeating the same request could succeed. */
+export class SupplierError extends Error {
+  constructor(message: string, readonly retryable: boolean) {
+    super(message);
+    this.name = 'SupplierError';
+  }
+}
+
+/**
+ * Whether a non-2xx status is worth another attempt. A 4xx means this request or the supplier's
+ * data is wrong, so retrying cannot help. 408 and 429 ask the client to try again, and 5xx is the
+ * supplier's own failure.
+ */
+export function isRetryableStatus(status: number): boolean {
+  return !(status >= 400 && status < 500) || status === 408 || status === 429;
+}
+
 function isHotel(value: unknown, city: string): value is SupplierHotel {
   if (!value || typeof value !== 'object') return false;
   const row = value as Partial<SupplierHotel>;
@@ -22,12 +39,17 @@ export async function fetchHotels(supplier: Supplier, city: string, outage?: Moc
   });
   if (!response.ok) {
     await response.body?.cancel();
-    throw new Error(`Supplier ${supplier} returned HTTP ${response.status}`);
+    throw new SupplierError(`Supplier ${supplier} returned HTTP ${response.status}`, isRetryableStatus(response.status));
   }
-  const rows: unknown = await response.json();
-  if (!Array.isArray(rows) || !rows.every(row => isHotel(row, city))) {
-    throw new Error(`Supplier ${supplier} returned invalid inventory`);
+  const invalid = () => new SupplierError(`Supplier ${supplier} returned invalid inventory`, false);
+  let rows: unknown;
+  try {
+    rows = await response.json();
+  } catch (error) {
+    // A complete body that is not JSON will not improve on retry. A dropped connection throws a different error.
+    throw error instanceof SyntaxError ? invalid() : error;
   }
+  if (!Array.isArray(rows) || !rows.every(row => isHotel(row, city))) throw invalid();
   return rows as SupplierHotel[];
 }
 

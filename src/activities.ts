@@ -1,8 +1,9 @@
 import { Context, log } from '@temporalio/activity';
+import { ApplicationFailure } from '@temporalio/common';
 import type Redis from 'ioredis';
 import { config } from './config';
 import type { MockOutage, Offer, Search, Supplier } from './domain';
-import { errorMessage, fetchHotels } from './suppliers';
+import { SupplierError, errorMessage, fetchHotels } from './suppliers';
 
 function outageForAttempt(outage: Search['outage'], attempt: number): MockOutage | undefined {
   if (outage !== 'B-once') return outage;
@@ -21,6 +22,10 @@ export function createActivities(redis: Redis) {
         return { supplier, hotels };
       } catch (error) {
         log.warn('Supplier request failed', { supplier, city, reason: errorMessage(error) });
+        // Temporal retries any other error. A request the supplier will keep rejecting is not worth three attempts.
+        if (error instanceof SupplierError && !error.retryable) {
+          throw ApplicationFailure.nonRetryable(error.message, 'SupplierBadResponse');
+        }
         throw error;
       }
     },

@@ -117,3 +117,25 @@ test('Temporal schedules both HTTP activities together and Redis keeps the full 
   assert.equal(scheduled.activityTaskScheduledEventAttributes.activityType.name, 'fetchSupplier');
   assert.equal(scheduledSupplier(scheduled.activityTaskScheduledEventAttributes), 'B');
 });
+
+test('a supplier request that can never succeed fails after one attempt, not three', async t => {
+  const client = await temporalClient(t);
+  // Started directly, an empty city makes each mock supplier answer with a real HTTP 400.
+  const handle = await client.workflow.start('compareHotelOffers', {
+    taskQueue: 'hotel-offers', workflowId: `hotels-permanent-${randomUUID()}`,
+    args: [{ city: '' }], workflowExecutionTimeout: 30000
+  });
+  await assert.rejects(handle.result(), error => error.cause?.type === 'SuppliersUnavailable');
+
+  const { events } = await handle.fetchHistory();
+  const started = events.filter(e => e.activityTaskStartedEventAttributes);
+  assert.equal(started.length, 2, 'one attempt per supplier and no retries');
+  for (const event of started) assert.equal(event.activityTaskStartedEventAttributes.attempt, 1);
+  const failed = events.filter(e => e.activityTaskFailedEventAttributes);
+  assert.equal(failed.length, 2);
+  for (const event of failed) {
+    const { failure } = event.activityTaskFailedEventAttributes;
+    assert.match(failure.message, /^Supplier [AB] returned HTTP 400$/);
+    assert.equal(failure.applicationFailureInfo.nonRetryable, true);
+  }
+});
