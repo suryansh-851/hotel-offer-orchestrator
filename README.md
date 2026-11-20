@@ -4,20 +4,19 @@ One search returns the cheapest offer for each hotel in a city. In Delhi, Suppli
 
 **Node.js · TypeScript · Express · Temporal · Redis · Docker Compose**
 
-[Quick start](#quick-start) · [API contract](#api-contract) · [Postman collection](postman/Hotel-Offer-Orchestrator.postman_collection.json) · [Deployment](#deploy-to-a-server) · [Assessment checklist](#assessment-checklist)
+[Quick start](#quick-start) · [API contract](#api-contract) · [Postman collection](postman/Hotel-Offer-Orchestrator.postman_collection.json) · [Deployment](#deploy-to-a-server) · [Known limitations](#known-limitations-and-production-hardening) · [Assessment checklist](#assessment-checklist)
 
 ## Quick start
 
-Install Docker with the Compose v2 plugin. Start the four services from the directory containing `compose.yaml`.
+You need Docker with the Compose v2 plugin.
 
 ```sh
 docker compose up --build -d --wait
-docker compose ps
+curl "http://127.0.0.1:3000/api/hotels?city=delhi&minPrice=5340&maxPrice=5900"
+curl http://127.0.0.1:3000/health
 ```
 
-All four services should report `healthy`. The worker’s readiness probe checks that the worker is running and that both a Temporal RPC and a Redis ping succeed.
-
-Open the [Delhi search](http://127.0.0.1:3000/api/hotels?city=delhi), [supplier health](http://127.0.0.1:3000/health), or [Temporal UI](http://127.0.0.1:8233). To reproduce the two rows in the assignment, open the [inclusive price range from 5,340 to 5,900](http://127.0.0.1:3000/api/hotels?city=delhi&minPrice=5340&maxPrice=5900).
+The search prints the two rows from the assignment, and `/health` reports `"status":"healthy"`.
 
 ```json
 [
@@ -25,6 +24,8 @@ Open the [Delhi search](http://127.0.0.1:3000/api/hotels?city=delhi), [supplier 
   { "name": "Radison", "price": 5900, "supplier": "Supplier A", "commissionPct": 13 }
 ]
 ```
+
+Try the [Delhi search](http://127.0.0.1:3000/api/hotels?city=delhi) or the [Temporal UI](http://127.0.0.1:8233), where each search is a workflow named in its `X-Workflow-Id` header. `docker compose ps` lists four healthy services, and `docker compose down` stops them.
 
 ## How a search works
 
@@ -114,7 +115,7 @@ The key suffix identifies the suppliers that responded. For example, `hotels:v1:
 
 ## Health, retries, and logs
 
-`/livez` only says the API process is up, and the Compose healthcheck for the API container uses it, so a supplier problem never makes the container unhealthy. `/health` calls both supplier listing endpoints in parallel with a two-second HTTP timeout. It can report supplier availability while Temporal or Redis is offline. Two successful probes return 200. A failed probe returns 503 and identifies the affected supplier. In this example, Supplier B is down.
+`/livez` only says the API process is up, and the Compose healthcheck for the API container uses it, so a supplier problem never makes the container unhealthy. `/health` calls both supplier listing endpoints in parallel with a two-second HTTP timeout. It can report supplier availability while Temporal or Redis is offline. The worker container is healthy only when its readiness probe passes: the worker is running, and both a Temporal RPC and a Redis ping succeed. Two successful probes return 200. A failed probe returns 503 and identifies the affected supplier. In this example, Supplier B is down.
 
 ```json
 {
@@ -140,17 +141,32 @@ To observe recovery inside a single search, send `X-Mock-Outage: B-once` on the 
 curl -i -H "X-Mock-Outage: B-once" "http://127.0.0.1:3000/api/hotels?city=delhi"
 ```
 
-Temporal allows three attempts per activity with exponential backoff starting at 250 ms. Each attempt gets four seconds and each activity gets twelve seconds overall. Only failures that can clear up are retried: network errors, timeouts, HTTP 5xx, 408 and 429. A supplier answer that will not change, such as another 4xx status or inventory that fails validation, fails the activity at once. The workflow treats that supplier as unavailable in the same way. The API gives Temporal three seconds to accept a workflow, so a stopped or unreachable Temporal fails fast with 503 `SEARCH_UNAVAILABLE` while `/health` and the supplier endpoints keep working. Once started, a workflow has thirty seconds to complete, and the API waits two seconds beyond that, so a slow search is reported as 504 `SEARCH_TIMEOUT` by the workflow's own limit. A failure to start is never a 504. The API and the worker both write one JSON object per line with an `event` field, such as `search.started`, `supplier.failed`, `redis.range_read` and `search.completed`. Activity and workflow entries carry the workflow ID, attempt number, Redis key and row counts, so `docker compose logs --no-log-prefix worker | jq 'select(.workflowId == "hotels-…")'` follows one search. [Temporal TypeScript guide](https://docs.temporal.io/develop/typescript)
+**Retries and timeouts**
+
+- Each activity gets three attempts with exponential backoff from 250 ms, four seconds per attempt and twelve seconds overall.
+- Only failures that can clear up are retried: network errors, timeouts, HTTP 5xx, 408 and 429. Another 4xx status, or inventory that fails validation, fails the activity at once, and the workflow treats that supplier as unavailable in the same way.
+- The API gives Temporal three seconds to accept a workflow. A stopped or unreachable Temporal returns 503 `SEARCH_UNAVAILABLE` in about three seconds, while `/health`, `/livez` and the supplier endpoints keep working. Searches resume when Temporal returns, with no restart of the API or the worker. A failure to start is never a 504.
+- A started workflow has thirty seconds to finish. The API waits two seconds longer, so a slow search is reported as 504 `SEARCH_TIMEOUT` by the workflow's own limit.
+
+**Logs.** The API and the worker both write one JSON object per line with an `event` field, such as `search.started`, `supplier.failed`, `redis.range_read` and `search.completed`. Activity and workflow entries carry the workflow ID, attempt number, Redis key and row counts, so `docker compose logs --no-log-prefix worker | jq 'select(.workflowId == "hotels-…")'` follows one search. [Temporal TypeScript guide](https://docs.temporal.io/develop/typescript)
 
 ## Run the tests
 
-**Postman.** Import the [collection JSON](postman/Hotel-Offer-Orchestrator.postman_collection.json), keep the collection variable `baseUrl` at `http://127.0.0.1:3000`, and select **Run collection**. The 26 requests check both raw supplier APIs, overlapping and exclusive hotels, price boundaries, empty results, validation, each supplier failing separately, both failing together, and recovery. Newman runs the same collection from a terminal with Node.js.
+**Postman.** Import the [collection JSON](postman/Hotel-Offer-Orchestrator.postman_collection.json), keep the collection variable `baseUrl` at `http://127.0.0.1:3000`, and select **Run collection**. The 26 requests (67 assertions) check both raw supplier APIs, overlapping and exclusive hotels, price boundaries, empty results, validation, each supplier failing separately, both failing together, and recovery. The outage requests send `X-Mock-Outage`, so the target needs `ENABLE_MOCK_FAULTS=true`, which Compose sets. Newman runs the same collection from a terminal with Node.js.
 
 ```sh
 npx --yes newman@6.2.1 run postman/Hotel-Offer-Orchestrator.postman_collection.json
 ```
 
-**Unit tests.** With Node.js 22 or 24, run `npm ci` and `npm test`. This compiles TypeScript and tests comparison rules and input validation.
+**Lint, unit tests and coverage.** With Node.js 22 or 24, run `npm ci`, then:
+
+```sh
+npm run lint            # ESLint with type-aware promise rules, zero warnings allowed
+npm test                # compile, then 48 unit tests in about two seconds
+npm run test:coverage   # the same tests with Node's built-in coverage table
+```
+
+The unit tests need no Docker, Temporal or Redis. They cover comparison rules, validation, the Express app over real HTTP with injected fakes, the activities (Temporal's `MockActivityEnvironment` and an in-memory Redis), retry classification, logging, and a check that the workflow bundle imports nothing impure. Coverage is 100% of lines across the modules it measures. It leaves out the two process entrypoints, `api.ts` and `worker.ts`, and `workflows.ts` never loads in a unit test, so the stack test below is what covers the workflow.
 
 **Full-stack test.** Run this command against the active Compose stack.
 
@@ -158,11 +174,11 @@ npx --yes newman@6.2.1 run postman/Hotel-Offer-Orchestrator.postman_collection.j
 docker compose run --rm --no-deps -v ./test:/app/test:ro worker npm run test:stack
 ```
 
-The stack tests inspect Temporal history to verify parallel scheduling, retry exhaustion during a sustained outage, and successful recovery during a single search. They also read Redis directly to check scores, expiration, separate city snapshots, and removal of stale offers when a city’s inventory becomes empty.
+The four stack tests inspect Temporal history to verify parallel scheduling, retry exhaustion during a sustained outage, recovery during a single search, and that a permanent supplier failure is attempted once instead of three times. They also read Redis directly to check scores, expiration, separate city snapshots, and removal of stale offers when a city’s inventory becomes empty.
 
 **Dependency failure tests.** With a dedicated Compose stack running, run `npm run test:resilience`. The suite pauses Temporal, stops Redis, and stops the worker in separate cases. It checks readiness and the API’s 503 and 504 responses, then restores the affected service and confirms searches recover after each case. Set `COMPOSE_PROJECT_NAME` if you started the stack with a custom project name and `API_BASE_URL` if the API uses a custom origin.
 
-After pushing the repository, open **Actions → Verify hotel offers** for the submitted commit. The workflow builds the project, checks supplier health before starting Temporal, and runs the unit, stack, Postman, and dependency failure tests. The run’s **postman-results** artifact contains the per-request JUnit report. [Verification workflow](.github/workflows/verify.yml)
+After pushing the repository, open **Actions → Verify hotel offers** for the submitted commit. The workflow lints and tests the project with coverage, checks supplier health before starting Temporal, and runs the stack, Postman, and dependency failure tests. The run’s **postman-results** artifact contains the per-request JUnit report. [Verification workflow](.github/workflows/verify.yml)
 
 To repeat the API checks against a deployed instance, replace the example origin with your public HTTPS origin.
 
@@ -192,6 +208,26 @@ Compose works with its defaults. A project-root `.env` can override the host bin
 
 For native development, start Redis on port 6379 and run `temporal server start-dev` on port 7233. Run `npm ci` and `npm run build`, then start `npm start` and `npm run worker` in separate terminals. Set `PORT`, `REDIS_URL`, `TEMPORAL_ADDRESS`, `TEMPORAL_NAMESPACE`, or `SUPPLIER_BASE_URL` in the process environment to override the defaults in [config.ts](src/config.ts). Set `ENABLE_MOCK_FAULTS=true` on the API process to try the outage headers; it is off by default, and Compose sets it for the demo stack.
 
+## Known limitations and production hardening
+
+This is an assessment deployment. What a production service would change:
+
+- **Temporal** runs the development server on SQLite. It is a single node and not highly available. Production wants a real Temporal cluster or Temporal Cloud.
+- **No caching across requests.** Every search rewrites its Redis snapshot, because the brief stores the deduplicated list and filters prices inside Redis. A cache with a freshness rule would need a decision about stale prices.
+- **Hotels match by name only.** Two different hotels with the same name in one city merge into one offer. A supplier-independent hotel ID would fix that.
+- **Prices are JavaScript numbers with no currency.** Money should be integer minor units with a currency code.
+- **No authentication or rate limiting** on any endpoint.
+- **Fault injection is a demo feature.** `X-Mock-Outage` is behind `ENABLE_MOCK_FAULTS`, which only Compose turns on. Leave it off anywhere real.
+- **A start that times out on the client can still have started the workflow** on the server. It ends by itself at its thirty-second limit.
+
+## Submitting
+
+Commit your work, then write a source-only archive from the repository root. It holds tracked files only, so `node_modules`, `dist` and `coverage` stay out. The command writes the zip one level up so it can never be committed by accident.
+
+```sh
+git archive --format=zip -o ../hotel-offer-orchestrator.zip HEAD
+```
+
 ## Assessment checklist
 
 | Requirement | Implementation and evidence |
@@ -200,7 +236,8 @@ For native development, start Redis on port 6379 and run `temporal server start-
 | Parallel Temporal orchestration | The stack test verifies the two supplier identities and their scheduling event in Temporal history. [Workflow](src/workflows.ts) |
 | Cheapest offer per name and exact response fields | **Compare offers** checks both overlapping names, both exclusive hotels, ties, the winning commissions and empty results. [Comparison rules](src/domain.ts) |
 | Persist all winners and filter prices in Redis | The stack test compares the HTTP result with a Redis score-range read, then checks the complete snapshot and its TTL. [Activities](src/activities.ts) |
-| Supplier health and failure handling | **Health and outages** tests partial success, total failure and recovery. Use the workflow ID to match HTTP results to activity attempts and logs. [HTTP routes](src/api.ts) |
-| Dependency failures and readiness | The resilience suite verifies live worker readiness, 503 responses when Redis or Temporal is unavailable, a 504 when a workflow waits for a stopped worker, and recovery after each failure. [Resilience tests](test/resilience.integration.cjs) |
+| Supplier health and failure handling | **Health and outages** tests partial success, total failure and recovery. Use the workflow ID to match HTTP results to activity attempts and logs. [HTTP routes](src/app.ts) |
+| Dependency failures and readiness | The resilience suite verifies live worker readiness, 503 responses when Redis or Temporal is unavailable, a 504 when a workflow waits for a stopped worker, and recovery after each failure. A stopped Temporal fails a search in about three seconds. [Resilience tests](test/resilience.integration.cjs) |
+| Logging and error handling in activities and workflows | Activities and the worker log single-line JSON events. A supplier 4xx or invalid payload fails once and the workflow degrades to the other supplier, while network errors, timeouts and 5xx are retried. [Activities](src/activities.ts) · [Supplier rules](src/suppliers.ts) · [Logging](src/logging.ts) |
 | Docker deployment | The API and worker use one multi-stage build recipe. Redis and workflow history use separate volumes. [Dockerfile](Dockerfile) · [Compose](compose.yaml) |
-| Review and reproduction | Import the Postman collection or run the integration test against the Compose stack. [Postman collection](postman/Hotel-Offer-Orchestrator.postman_collection.json) · [Stack test](test/stack.integration.cjs) |
+| Review and reproduction | Import the Postman collection, run `npm test`, or run the integration test against the Compose stack. [Postman collection](postman/Hotel-Offer-Orchestrator.postman_collection.json) · [Stack test](test/stack.integration.cjs) |
